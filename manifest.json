@@ -1,6 +1,6 @@
 {
   "name": "TreePlanterMod",
-  "version_number": "0.0.1",
+  "version_number": "0.0.2",
   "website_url": "https://github.com/kojin15/TreePlanterMod/blob/master/TreePlanterMod/TreePlanterMod.cs",
   "description": "Addition of charcoal, sapling, and wood making recipes using sapling.",
   "dependencies": [

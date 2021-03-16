@@ -22,7 +22,7 @@ namespace TreePlanterMod {
     }
 
     [BepInDependency("me.xiaoye97.plugin.Dyson.LDBTool")]
-    [BepInPlugin("org.bepinex.plugins.treeplantermod", "Tree Planter Mod", "0.0.1")]
+    [BepInPlugin("org.bepinex.plugins.treeplantermod", "Tree Planter Mod", "0.0.2")]
     public class TreePlanterMod : BaseUnityPlugin {
         private Sprite _iconCharcoal;
         private Sprite _iconOriWood;
@@ -113,7 +113,7 @@ namespace TreePlanterMod {
 
             var sapling = LDB.items.Select(1201).Copy();
             sapling.ID = Constants.ItemSaplingID;
-            sapling.GridIndex = 1606;
+            sapling.GridIndex = 1506;
             sapling.Type = EItemType.Resource;
             sapling.Name = "sapling";
             sapling.name = sapling.Name.Translate();
@@ -150,7 +150,7 @@ namespace TreePlanterMod {
 
             var charcoal = LDB.items.Select(1109).Copy();
             charcoal.ID = Constants.ItemCharcoalID;
-            charcoal.GridIndex = 1607;
+            charcoal.GridIndex = 1507;
             charcoal.Type = EItemType.Resource;
             charcoal.HeatValue = 2700000;
             charcoal.ReactorInc = 0.0f;
