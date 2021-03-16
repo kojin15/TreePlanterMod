@@ -6,29 +6,36 @@ using UnityEngine;
 using xiaoye97;
 
 namespace TreePlanterMod {
-    public static class Constants {
-        public const int StringSaplingID = 28500;
-        public const int StringPlantRecipeID = 28501;
-        public const int StringPlantRecipeDescID = 28502;
-        public const int StringCharcoalID = 28503;
-        public const int StringCharcoalDescID = 28504;
 
-        public const int ItemSaplingID = 9150;
-        public const int ItemCharcoalID = 9151;
-
-        public const int RecipeSaplingID = 220;
-        public const int RecipePlantID = 221;
-        public const int RecipeCharcoalID = 222;
-    }
-
+    //[BepInDependency("Appun.plugins.dspmod.DSPJapanesePlugin", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("me.xiaoye97.plugin.Dyson.LDBTool")]
-    [BepInPlugin("org.bepinex.plugins.treeplantermod", "Tree Planter Mod", "0.0.2")]
+    [BepInPlugin("org.bepinex.plugins.treeplantermod", "Tree Planter Mod", "0.0.3")]
     public class TreePlanterMod : BaseUnityPlugin {
+        //private bool _isLoadedJPPlugin = false;
+
         private Sprite _iconCharcoal;
         private Sprite _iconOriWood;
         private Sprite _iconSapling;
+        
+        public StringProto stringSapling;
+        public StringProto stringCharcoal;
+        public StringProto stringCharcoalDesc;
+        public StringProto stringPlantRecipe;
+        public StringProto stringPlantRecipeDesc;
+        
+        public ItemProto itemSapling;
+        public ItemProto itemCharcoal;
+
+        public RecipeProto recipeSapling;
+        public RecipeProto recipePlant;
+        public RecipeProto recipeCharcoal;
 
         private void Awake() {
+            /*
+            _isLoadedJPPlugin = BepInEx.Bootstrap.Chainloader.PluginInfos.Values.Any(it =>
+                it.Metadata.GUID == "Appun.plugins.dspmod.DSPJapanesePlugin");
+            */
+
             var bundle = AssetBundle.LoadFromStream(Assembly.GetExecutingAssembly()
                 .GetManifestResourceStream("TreePlanterMod.resources"));
             _iconSapling = bundle.LoadAsset<Sprite>("iconSapling");
@@ -36,140 +43,167 @@ namespace TreePlanterMod {
             _iconCharcoal = bundle.LoadAsset<Sprite>("charcoal");
 
             LDBTool.PreAddDataAction += AddTranslate;
-            LDBTool.PreAddDataAction += AddSapling;
-            LDBTool.PreAddDataAction += AddCharcoal;
-            LDBTool.PostAddDataAction += PostLoad;
-        }
+            LDBTool.PostAddDataAction += AddItem;
+            LDBTool.PostAddDataAction += AddRecipe;
+            LDBTool.PostAddDataAction += RegisterRecipeInItem;
 
+            Harmony.CreateAndPatchAll(typeof(TreePlanterMod));
+        }
+        
         private void AddTranslate() {
-            var sapling = new StringProto {
-                ID = Constants.StringSaplingID,
+            stringSapling = new StringProto {
+                ID = 28500,
                 Name = "sapling",
-                ENUS = "Sapling"
+                name = "sapling",
+                ZHCN = "Sapling",
+                ENUS = "Sapling",
+                FRFR = "Sapling"
+                //JPJP = "苗木"
             };
-            var plantRecipe = new StringProto {
-                ID = Constants.StringPlantRecipeID,
+            stringPlantRecipe = new StringProto {
+                ID = 28501,
                 Name = "plantRecipe",
-                ENUS = "Log (original)"
+                name = "plantRecipe",
+                ZHCN = "Log (original)",
+                ENUS = "Log (original)",
+                FRFR = "Log (original)"
+                //JPJP = "木材(原始的)"
             };
-            var plantRecipeDesc = new StringProto {
-                ID = Constants.StringPlantRecipeDescID,
+            stringPlantRecipeDesc = new StringProto {
+                ID = 28502,
                 Name = "plantRecipeDesc",
-                ENUS = "Growing trees"
+                name = "plantRecipeDesc",
+                ZHCN = "Growing trees",
+                ENUS = "Growing trees",
+                FRFR = "Growing trees"
+                //JPJP = "木を育てる"
             };
-            var charcoal = new StringProto {
-                ID = Constants.StringCharcoalID,
+            stringCharcoal = new StringProto {
+                ID = 28503,
                 Name = "charcoal",
-                ENUS = "Charcoal"
+                name = "charcoal",
+                ZHCN = "Charcoal",
+                ENUS = "Charcoal",
+                FRFR = "Charcoal"
+                //JPJP = "木炭"
             };
-            var charcoalDesc = new StringProto {
-                ID = Constants.StringCharcoalDescID,
+            stringCharcoalDesc = new StringProto {
+                ID = 28504,
                 Name = "charcoalDesc",
-                ENUS = "Ordinary fuel. obtained by smelting wood, has the same energy as coal."
+                name = "charcoalDesc",
+                ZHCN = "Ordinary fuel. obtained by smelting wood, has the same energy as coal.",
+                ENUS = "Ordinary fuel. obtained by smelting wood, has the same energy as coal.",
+                FRFR = "Ordinary fuel. obtained by smelting wood, has the same energy as coal."
+                //JPJP = "平凡な燃料です。木を製錬することで得られ、石炭と同等のエネルギーを有します。"
             };
 
-            LDBTool.PreAddProto(ProtoType.String, sapling);
-            LDBTool.PreAddProto(ProtoType.String, plantRecipe);
-            LDBTool.PreAddProto(ProtoType.String, plantRecipeDesc);
-            LDBTool.PreAddProto(ProtoType.String, charcoal);
-            LDBTool.PreAddProto(ProtoType.String, charcoalDesc);
+            LDBTool.PreAddProto(ProtoType.String, stringSapling);
+            LDBTool.PreAddProto(ProtoType.String, stringPlantRecipe);
+            LDBTool.PreAddProto(ProtoType.String, stringPlantRecipeDesc);
+            LDBTool.PreAddProto(ProtoType.String, stringCharcoal);
+            LDBTool.PreAddProto(ProtoType.String, stringCharcoalDesc);
         }
 
-        private void AddSapling() {
-            var saplingRecipe = LDB.recipes.Select(5).Copy();
-            saplingRecipe.ID = Constants.RecipeSaplingID;
-            saplingRecipe.GridIndex = 1610;
-            saplingRecipe.Type = ERecipeType.Assemble;
-            saplingRecipe.Name = "sapling";
-            saplingRecipe.name = "sapling".Translate();
-            saplingRecipe.Items = new[] {1030};
-            saplingRecipe.ItemCounts = new[] {1};
-            saplingRecipe.Results = new[] {Constants.ItemSaplingID};
-            saplingRecipe.ResultCounts = new[] {5};
-            saplingRecipe.TimeSpend = 30;
-            saplingRecipe.Description = "";
-            saplingRecipe.description = "";
-            saplingRecipe.preTech = LDB.techs.Select(1121);
-            Traverse.Create(saplingRecipe).Field("_iconSprite").SetValue(_iconSapling);
-
-            var plantRecipe = LDB.recipes.Select(23).Copy();
-            plantRecipe.ID = Constants.RecipePlantID;
-            plantRecipe.GridIndex = 1611;
-            plantRecipe.Explicit = true;
-            plantRecipe.Type = ERecipeType.Chemical;
-            plantRecipe.Name = "plantRecipe";
-            plantRecipe.name = plantRecipe.Name.Translate();
-            plantRecipe.Items = new[] {Constants.ItemSaplingID, 1000};
-            plantRecipe.ItemCounts = new[] {10, 20};
-            plantRecipe.Results = new[] {1030, 1031};
-            plantRecipe.ResultCounts = new[] {12, 15};
-            plantRecipe.TimeSpend = 3600;
-            plantRecipe.Description = "plantRecipeDesc";
-            plantRecipe.description = plantRecipe.Description.Translate();
-            plantRecipe.preTech = LDB.techs.Select(1121);
-            Traverse.Create(plantRecipe).Field("_iconSprite").SetValue(_iconOriWood);
-            LDB.items.Select(1030).recipes.Add(plantRecipe);
-            LDB.items.Select(1031).recipes.Add(plantRecipe);
-
-            var sapling = LDB.items.Select(1201).Copy();
-            sapling.ID = Constants.ItemSaplingID;
-            sapling.GridIndex = 1506;
-            sapling.Type = EItemType.Resource;
-            sapling.Name = "sapling";
-            sapling.name = sapling.Name.Translate();
-            sapling.Description = "";
-            sapling.description = "";
-            sapling.handcraft = saplingRecipe;
-            sapling.handcrafts = new List<RecipeProto> {saplingRecipe};
-            sapling.maincraft = saplingRecipe;
-            sapling.recipes = new List<RecipeProto> {saplingRecipe};
-            sapling.makes = new List<RecipeProto> {plantRecipe};
-            Traverse.Create(sapling).Field("_iconSprite").SetValue(_iconSapling);
-
-            LDBTool.PreAddProto(ProtoType.Recipe, saplingRecipe);
-            LDBTool.PreAddProto(ProtoType.Recipe, plantRecipe);
-            LDBTool.PreAddProto(ProtoType.Item, sapling);
+        private void AddItem() {
+            itemSapling = LDB.items.Select(1201).Copy();
+            itemSapling.ID = 9150;
+            itemSapling.GridIndex = 1506;
+            itemSapling.Type = EItemType.Resource;
+            itemSapling.Name = "sapling";
+            itemSapling.name = itemSapling.Name.Translate();
+            itemSapling.Description = "";
+            itemSapling.description = "";
+            Traverse.Create(itemSapling).Field("_iconSprite").SetValue(_iconSapling);
+            LDBTool.PostAddProto(ProtoType.Item, itemSapling);
+            
+            itemCharcoal = LDB.items.Select(1109).Copy();
+            itemCharcoal.ID = 9151;
+            itemCharcoal.GridIndex = 1507;
+            itemCharcoal.Type = EItemType.Resource;
+            itemCharcoal.HeatValue = 2700000;
+            itemCharcoal.ReactorInc = 0.0f;
+            itemCharcoal.Name = "charcoal";
+            itemCharcoal.name = itemCharcoal.Name.Translate();
+            itemCharcoal.Description = "charcoalDesc";
+            itemCharcoal.description = itemCharcoal.Description.Translate();
+            Traverse.Create(itemCharcoal).Field("_iconSprite").SetValue(_iconCharcoal);
+            LDBTool.PostAddProto(ProtoType.Item, itemCharcoal);
         }
 
-        private void AddCharcoal() {
-            var charcoalRecipe = LDB.recipes.Select(17).Copy();
-            charcoalRecipe.ID = Constants.RecipeCharcoalID;
-            charcoalRecipe.GridIndex = 1612;
-            charcoalRecipe.Type = ERecipeType.Smelt;
-            charcoalRecipe.Name = "charcoalRecipe";
-            charcoalRecipe.name = "";
-            charcoalRecipe.Items = new[] {1030};
-            charcoalRecipe.ItemCounts = new[] {2};
-            charcoalRecipe.Results = new[] {Constants.ItemCharcoalID};
-            charcoalRecipe.ResultCounts = new[] {2};
-            charcoalRecipe.TimeSpend = 120;
-            charcoalRecipe.Description = "";
-            charcoalRecipe.description = "";
-            charcoalRecipe.preTech = LDB.techs.Select(1401);
-            Traverse.Create(charcoalRecipe).Field("_iconSprite").SetValue(_iconCharcoal);
-
-            var charcoal = LDB.items.Select(1109).Copy();
-            charcoal.ID = Constants.ItemCharcoalID;
-            charcoal.GridIndex = 1507;
-            charcoal.Type = EItemType.Resource;
-            charcoal.HeatValue = 2700000;
-            charcoal.ReactorInc = 0.0f;
-            charcoal.Name = "charcoal";
-            charcoal.name = charcoal.Name.Translate();
-            charcoal.Description = "charcoalDesc";
-            charcoal.description = charcoal.Description.Translate();
-            charcoal.handcraft = null;
-            charcoal.handcrafts = new List<RecipeProto>();
-            charcoal.maincraft = charcoalRecipe;
-            charcoal.recipes = new List<RecipeProto> {charcoalRecipe};
-            charcoal.makes = new List<RecipeProto>();
-            Traverse.Create(charcoal).Field("_iconSprite").SetValue(_iconCharcoal);
-
-            LDBTool.PreAddProto(ProtoType.Recipe, charcoalRecipe);
-            LDBTool.PreAddProto(ProtoType.Item, charcoal);
+        private void AddRecipe() {
+            recipeSapling = LDB.recipes.Select(5).Copy();
+            recipeSapling.ID = 220;
+            recipeSapling.GridIndex = 1610;
+            recipeSapling.Type = ERecipeType.Assemble;
+            recipeSapling.Name = "sapling";
+            recipeSapling.name = recipeSapling.Name.Translate();
+            recipeSapling.Items = new[] {1030};
+            recipeSapling.ItemCounts = new[] {1};
+            recipeSapling.Results = new[] {itemSapling.ID};
+            recipeSapling.ResultCounts = new[] {5};
+            recipeSapling.TimeSpend = 30;
+            recipeSapling.Description = "";
+            recipeSapling.description = "";
+            recipeSapling.preTech = LDB.techs.Select(1121);
+            Traverse.Create(recipeSapling).Field("_iconSprite").SetValue(_iconSapling);
+            LDBTool.PostAddProto(ProtoType.Recipe, recipeSapling);
+            
+            recipePlant = LDB.recipes.Select(23).Copy();
+            recipePlant.ID = 221;
+            recipePlant.GridIndex = 1611;
+            recipePlant.Explicit = true;
+            recipePlant.Type = ERecipeType.Chemical;
+            recipePlant.Name = "plantRecipe";
+            recipePlant.name = recipePlant.Name.Translate();
+            recipePlant.Items = new[] {itemSapling.ID, 1000};
+            recipePlant.ItemCounts = new[] {10, 20};
+            recipePlant.Results = new[] {1030, 1031};
+            recipePlant.ResultCounts = new[] {12, 15};
+            recipePlant.TimeSpend = 3600;
+            recipePlant.Description = "plantRecipeDesc";
+            recipePlant.description = recipePlant.Description.Translate();
+            recipePlant.preTech = LDB.techs.Select(1121);
+            Traverse.Create(recipePlant).Field("_iconSprite").SetValue(_iconOriWood);
+            LDBTool.PostAddProto(ProtoType.Recipe, recipePlant);
+            
+            recipeCharcoal = LDB.recipes.Select(17).Copy();
+            recipeCharcoal.ID = 222;
+            recipeCharcoal.GridIndex = 1612;
+            recipeCharcoal.Type = ERecipeType.Smelt;
+            recipeCharcoal.Name = "";
+            recipeCharcoal.name = "";
+            recipeCharcoal.Items = new[] {1030};
+            recipeCharcoal.ItemCounts = new[] {2};
+            recipeCharcoal.Results = new[] {itemCharcoal.ID};
+            recipeCharcoal.ResultCounts = new[] {2};
+            recipeCharcoal.TimeSpend = 120;
+            recipeCharcoal.Description = "";
+            recipeCharcoal.description = "";
+            recipeCharcoal.preTech = LDB.techs.Select(1401);
+            Traverse.Create(recipeCharcoal).Field("_iconSprite").SetValue(_iconCharcoal);
+            LDBTool.PostAddProto(ProtoType.Recipe, recipeCharcoal);
         }
 
-        private void PostLoad() {
+        private void RegisterRecipeInItem() {
+            LDB.items.Select(1030).recipes.Add(recipePlant);
+            LDB.items.Select(1031).recipes.Add(recipePlant);
+            
+            itemSapling.handcraft = recipeSapling;
+            itemSapling.handcrafts = new List<RecipeProto> {recipeSapling};
+            itemSapling.maincraft = recipeSapling;
+            itemSapling.recipes = new List<RecipeProto> {recipeSapling};
+            itemSapling.makes = new List<RecipeProto> {recipePlant};
+            
+            itemCharcoal.handcraft = null;
+            itemCharcoal.handcrafts = new List<RecipeProto>();
+            itemCharcoal.maincraft = recipeCharcoal;
+            itemCharcoal.recipes = new List<RecipeProto> {recipeCharcoal};
+            itemCharcoal.makes = new List<RecipeProto>();
+        }
+        
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(LDBTool), "VFPreloadPostPatch")]
+        private static void PostLoad() {
             ItemProto.InitFuelNeeds();
         }
     }
