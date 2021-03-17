@@ -10,4 +10,5 @@
   &lt;Assembly Path="D:\Users\kojin15\RiderProjects\TreePlanterMod\TreePlanterMod\Libs\LDBTool.dll" /&gt;&#xD;
   &lt;Assembly Path="D:\Users\kojin15\RiderProjects\TreePlanterMod\TreePlanterMod\Libs\BepInEx.dll" /&gt;&#xD;
   &lt;Assembly Path="D:\Users\kojin15\RiderProjects\TreePlanterMod\TreePlanterMod\Libs\Assembly-CSharp.dll" /&gt;&#xD;
+  &lt;Assembly Path="D:\Users\kojin15\RiderProjects\TreePlanterMod\TreePlanterMod\Libs\0Harmony.dll" /&gt;&#xD;
 &lt;/AssemblyExplorer&gt;</s:String></wpf:ResourceDictionary>

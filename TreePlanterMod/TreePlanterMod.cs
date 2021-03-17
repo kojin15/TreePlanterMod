@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using BepInEx;
 using HarmonyLib;
@@ -6,13 +7,11 @@ using UnityEngine;
 using xiaoye97;
 
 namespace TreePlanterMod {
-
-    //[BepInDependency("Appun.plugins.dspmod.DSPJapanesePlugin", BepInDependency.DependencyFlags.SoftDependency)]
+    
     [BepInDependency("me.xiaoye97.plugin.Dyson.LDBTool")]
-    [BepInPlugin("org.bepinex.plugins.treeplantermod", "Tree Planter Mod", "0.0.3")]
+    [BepInDependency("Appun.plugins.dspmod.DSPJapanesePlugin", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInPlugin("kojin15.plugins.dsp.TreePlanterMod", "TreePlanterMod", "1.0.0")]
     public class TreePlanterMod : BaseUnityPlugin {
-        //private bool _isLoadedJPPlugin = false;
-
         private Sprite _iconCharcoal;
         private Sprite _iconOriWood;
         private Sprite _iconSapling;
@@ -31,11 +30,6 @@ namespace TreePlanterMod {
         public RecipeProto recipeCharcoal;
 
         private void Awake() {
-            /*
-            _isLoadedJPPlugin = BepInEx.Bootstrap.Chainloader.PluginInfos.Values.Any(it =>
-                it.Metadata.GUID == "Appun.plugins.dspmod.DSPJapanesePlugin");
-            */
-
             var bundle = AssetBundle.LoadFromStream(Assembly.GetExecutingAssembly()
                 .GetManifestResourceStream("TreePlanterMod.resources"));
             _iconSapling = bundle.LoadAsset<Sprite>("iconSapling");
@@ -43,6 +37,7 @@ namespace TreePlanterMod {
             _iconCharcoal = bundle.LoadAsset<Sprite>("charcoal");
 
             LDBTool.PreAddDataAction += AddTranslate;
+            
             LDBTool.PostAddDataAction += AddItem;
             LDBTool.PostAddDataAction += AddRecipe;
             LDBTool.PostAddDataAction += RegisterRecipeInItem;
@@ -51,51 +46,13 @@ namespace TreePlanterMod {
         }
         
         private void AddTranslate() {
-            stringSapling = new StringProto {
-                ID = 28500,
-                Name = "sapling",
-                name = "sapling",
-                ZHCN = "Sapling",
-                ENUS = "Sapling",
-                FRFR = "Sapling"
-                //JPJP = "苗木"
-            };
-            stringPlantRecipe = new StringProto {
-                ID = 28501,
-                Name = "plantRecipe",
-                name = "plantRecipe",
-                ZHCN = "Log (original)",
-                ENUS = "Log (original)",
-                FRFR = "Log (original)"
-                //JPJP = "木材(原始的)"
-            };
-            stringPlantRecipeDesc = new StringProto {
-                ID = 28502,
-                Name = "plantRecipeDesc",
-                name = "plantRecipeDesc",
-                ZHCN = "Growing trees",
-                ENUS = "Growing trees",
-                FRFR = "Growing trees"
-                //JPJP = "木を育てる"
-            };
-            stringCharcoal = new StringProto {
-                ID = 28503,
-                Name = "charcoal",
-                name = "charcoal",
-                ZHCN = "Charcoal",
-                ENUS = "Charcoal",
-                FRFR = "Charcoal"
-                //JPJP = "木炭"
-            };
-            stringCharcoalDesc = new StringProto {
-                ID = 28504,
-                Name = "charcoalDesc",
-                name = "charcoalDesc",
-                ZHCN = "Ordinary fuel. obtained by smelting wood, has the same energy as coal.",
-                ENUS = "Ordinary fuel. obtained by smelting wood, has the same energy as coal.",
-                FRFR = "Ordinary fuel. obtained by smelting wood, has the same energy as coal."
-                //JPJP = "平凡な燃料です。木を製錬することで得られ、石炭と同等のエネルギーを有します。"
-            };
+            stringSapling = new StringProtoJP(28500, "sapling", "Sapling", "苗木");
+            stringPlantRecipe = new StringProtoJP(28501, "plantRecipe", "Log (original)", "木材(原始的)");
+            stringPlantRecipeDesc = new StringProtoJP(28502, "plantRecipeDesc", "Growing trees.", "木を育てる。");
+            stringCharcoal = new StringProtoJP(28503, "charcoal", "Charcoal", "木炭");
+            stringCharcoalDesc = new StringProtoJP(28504, "charcoalDesc", 
+                "Ordinary fuel. obtained by smelting wood, has the same energy as coal.",
+                "平凡な燃料です。木を製錬することで得られ、石炭と同等のエネルギーを有します。");
 
             LDBTool.PreAddProto(ProtoType.String, stringSapling);
             LDBTool.PreAddProto(ProtoType.String, stringPlantRecipe);
@@ -206,5 +163,21 @@ namespace TreePlanterMod {
         private static void PostLoad() {
             ItemProto.InitFuelNeeds();
         }
+
+        
+        [HarmonyPostfix]
+        [HarmonyPriority(Priority.High)]
+        [HarmonyPatch(typeof(VFPreload), "InvokeOnLoadWorkEnded")]
+        private static void JPTranslatePatch() {
+            var type = AccessTools.TypeByName("DSPJapanesePlugin.DSPJapaneseMod");
+            if (type != null) {
+                if (AccessTools.Property(type, "JPDictionary").GetValue(type, null) is Dictionary<string, string> dic) {
+                    foreach (var protoJP in LDB.strings.dataArray.OfType<StringProtoJP>()) { 
+                        dic.Add(protoJP.name, protoJP.JAJP);
+                    }
+                }
+            }
+        }
+        
     }
 }
